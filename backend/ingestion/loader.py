@@ -1,3 +1,4 @@
+import io
 import pandas as pd
 from pathlib import Path
 from models.event import SecurityEvent
@@ -9,6 +10,32 @@ def get_value(row, column):
     if column not in row.index or pd.isna(row[column]):
         return None
     return str(row[column])
+
+
+def load_csv_from_bytes(file_bytes, source_type):
+    if not file_bytes or len(file_bytes.strip()) == 0:
+        return []
+
+    df = pd.read_csv(io.BytesIO(file_bytes))
+    events = []
+
+    for index, row in df.iterrows():
+        event = SecurityEvent(
+            event_id=f"{source_type.upper()}_{index + 1:04d}",
+            timestamp=get_value(row, "timestamp"),
+            source_type=source_type,
+            event_type=get_value(row, "event_type"),
+            user=get_value(row, "user"),
+            source_ip=get_value(row, "source_ip"),
+            source_host=get_value(row, "source_host"),
+            destination_host=get_value(row, "destination_host"),
+            action=get_value(row, "action"),
+            severity=get_value(row, "severity")
+        )
+
+        events.append(event)
+
+    return events
 
 
 def load_csv(filename, source_type):

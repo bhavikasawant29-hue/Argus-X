@@ -1,0 +1,1884 @@
+<!DOCTYPE html>
+
+<html class="h-full dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ARGUS-X — Security Telemetry Correlation &amp; Attack Reconstruction Engine</title>
+<!-- Tailwind CSS with plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+          },
+          colors: {
+            brand: {
+              green: '#10b981',
+              amber: '#f59e0b',
+              red: '#ef4444',
+              blue: '#3b82f6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    :root {
+      --bg-main: #0c0d10;
+      --bg-surface: #13151b;
+      --bg-surface-hover: #1c1f26;
+      --border-color: #232731;
+      --text-primary: #f3f4f6;
+      --text-muted: #9ca3af;
+      --badge-bg: #181b22;
+      --color-green: #10b981;
+      --color-amber: #f59e0b;
+      --color-red: #ef4444;
+      --color-blue: #3b82f6;
+    }
+
+    html.light {
+      --bg-main: #f7f8fa;
+      --bg-surface: #ffffff;
+      --bg-surface-hover: #f0f2f5;
+      --border-color: #e2e5e9;
+      --text-primary: #111827;
+      --text-muted: #64748b;
+      --badge-bg: #eef1f5;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: 'Inter', system-ui, sans-serif;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      margin: 0;
+    }
+
+    .font-mono-code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+
+    /* Hairline borders & utility colors using CSS vars */
+    .bg-main { background-color: var(--bg-main); }
+    .bg-surface { background-color: var(--bg-surface); }
+    .bg-surface-hover:hover { background-color: var(--bg-surface-hover); }
+    .border-main { border-color: var(--border-color); }
+    .text-primary { color: var(--text-primary); }
+    .text-muted { color: var(--text-muted); }
+    .bg-badge { background-color: var(--badge-bg); }
+
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+  </style>
+</head>
+<body class="h-full flex flex-col antialiased selection:bg-emerald-500/20 selection:text-emerald-400 min-h-screen">
+<!-- ========================================================================= -->
+<!-- 1. LANDING PAGE VIEW -->
+<!-- ========================================================================= -->
+<section class="min-h-screen flex flex-col bg-main text-primary" id="view-landing">
+<!-- Top Nav -->
+<header class="w-full border-b border-main bg-main/90 backdrop-blur sticky top-0 z-40">
+<div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center space-x-3">
+<div class="w-6 h-6 rounded bg-surface border border-main flex items-center justify-center shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+</div>
+<span class="text-sm font-semibold tracking-wide text-primary">ARGUS-X</span>
+<span class="text-xs text-muted pl-2 border-l border-main hidden sm:inline-block font-mono-code">SECURITY TELEMETRY ENGINE</span>
+</div>
+<div class="flex items-center space-x-6 sm:space-x-8">
+<nav class="hidden md:flex items-center space-x-6 text-xs text-muted">
+<a class="hover:text-primary transition-colors" href="#product">Platform</a>
+<a class="hover:text-primary transition-colors" href="#pipeline">Pipeline</a>
+<a class="hover:text-primary transition-colors" href="#architecture">Architecture</a>
+</nav>
+<!-- Theme Toggle Button -->
+<button class="flex items-center space-x-1.5 px-2.5 py-1 rounded border border-main bg-surface text-xs text-muted hover:text-primary transition-colors" onclick="toggleTheme()" title="Toggle theme">
+<span class="material-symbols-outlined text-[16px]" id="theme-toggle-icon">light_mode</span>
+<span class="hidden sm:inline text-[11px] font-medium" id="theme-toggle-text">Light</span>
+</button>
+<button class="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-gray-950 text-xs font-medium tracking-normal transition-colors rounded shadow-sm flex items-center space-x-2" onclick="switchView('new-investigation')">
+<span>Start Investigation</span>
+<span class="font-mono-code">→</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Hero Section -->
+<main class="flex-1 max-w-7xl w-full mx-auto px-6 pt-16 pb-24">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+<div class="lg:col-span-7 space-y-7">
+<div class="inline-flex items-center space-x-2 px-2.5 py-1 bg-surface border border-main text-xs text-muted rounded">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+<span class="font-mono-code text-[11px]">ARGUS CORRELATION ENGINE V2.4 ACTIVE</span>
+</div>
+<h1 class="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight leading-[1.1] text-primary">
+            From fragmented telemetry to a reconstructed attack.
+          </h1>
+<p class="text-base sm:text-lg text-muted max-w-xl leading-relaxed font-normal">
+            ARGUS-X correlates authentication, endpoint, network, and application telemetry to reconstruct what happened, connect conclusions to evidence, identify what remains unknown, and show where the attack could have been stopped.
+          </p>
+<div class="flex flex-wrap items-center gap-4 pt-2">
+<button class="px-5 py-2.5 bg-[#10b981] hover:bg-[#059669] text-gray-950 text-sm font-medium transition-colors rounded shadow-sm flex items-center space-x-2" onclick="switchView('new-investigation')">
+<span>Start Investigation</span>
+<span class="font-mono-code">→</span>
+</button>
+<a class="px-4 py-2.5 border border-main bg-surface text-primary hover:bg-surface-hover text-sm font-medium transition-colors rounded" href="#pipeline">
+              How it Works
+            </a>
+</div>
+<div class="pt-6 border-t border-main flex items-center space-x-8 text-xs text-muted">
+<div><span class="text-primary font-semibold font-mono-code">809</span> events in benchmark</div>
+<div class="w-1 h-1 rounded-full bg-main border border-main"></div>
+<div><span class="text-primary font-semibold font-mono-code">4</span> cross-tier telemetry sources</div>
+<div class="w-1 h-1 rounded-full bg-main border border-main"></div>
+<div><span class="text-[#10b981] font-semibold font-mono-code">100%</span> grounded confidence</div>
+</div>
+</div>
+<!-- Right Side: Flow Arrows Pipeline Graphic -->
+<div class="lg:col-span-5">
+<div class="border border-main bg-surface p-7 rounded">
+<div class="flex items-center justify-between pb-5 border-b border-main">
+<span class="text-xs font-mono-code uppercase tracking-wider text-muted">Execution Flow</span>
+<span class="text-xs font-mono-code text-[#10b981] flex items-center space-x-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+<span>Synchronized</span>
+</span>
+</div>
+<!-- Large, clear conceptual pipeline arrows -->
+<div class="py-6 flex flex-col items-center justify-center space-y-2">
+<div class="w-full py-2.5 px-4 rounded border border-main bg-main/70 text-center font-mono-code text-xs text-primary font-medium">
+                TELEMETRY
+              </div>
+<div class="text-[#10b981] text-base font-bold select-none leading-none py-1">↓</div>
+<div class="w-full py-2.5 px-4 rounded border border-main bg-main/70 text-center font-mono-code text-xs text-primary font-medium">
+                CORRELATION
+              </div>
+<div class="text-[#10b981] text-base font-bold select-none leading-none py-1">↓</div>
+<div class="w-full py-2.5 px-4 rounded border border-main bg-main/70 text-center font-mono-code text-xs text-primary font-medium">
+                RECONSTRUCTION
+              </div>
+<div class="text-[#10b981] text-base font-bold select-none leading-none py-1">↓</div>
+<div class="w-full py-2.5 px-4 rounded border border-main bg-main/70 text-center font-mono-code text-xs text-primary font-medium">
+                EVIDENCE
+              </div>
+<div class="text-[#10b981] text-base font-bold select-none leading-none py-1">↓</div>
+<div class="w-full py-2.5 px-4 rounded border border-[#10b981]/40 bg-[#10b981]/10 text-center font-mono-code text-xs text-[#10b981] font-semibold">
+                ATTACK STORY
+              </div>
+</div>
+<div class="pt-4 border-t border-main flex items-center justify-between text-xs">
+<span class="text-muted">Reconstructed path:</span>
+<span class="font-mono-code font-medium text-primary">
+                PC-25 <span class="text-muted">→</span> SRV-02 <span class="text-muted">→</span> <span class="text-[#ef4444]">DB-01</span>
+</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Problem Statement: Typographic Scale, hairline dividers -->
+<section class="mt-28 pt-16 border-t border-main" id="product">
+<div class="grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+<div class="md:col-span-5 space-y-3">
+<span class="text-xs uppercase tracking-wider font-mono-code text-muted">The Ingestion Problem</span>
+<h2 class="text-2xl sm:text-3xl font-semibold text-primary tracking-tight leading-snug">
+              Security events don't arrive as a narrative.
+            </h2>
+<p class="text-sm text-muted leading-relaxed">
+              When an intrusion occurs, evidence is scattered across disjointed data lakes, incompatible schemas, and millisecond time skews.
+            </p>
+</div>
+<div class="md:col-span-7 space-y-6">
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono-code">
+<div class="p-3 border-b md:border-b-0 md:border-r border-main">
+<div class="text-muted text-[11px]">Source 01</div>
+<div class="text-primary font-medium mt-1">Authentication</div>
+</div>
+<div class="p-3 border-b md:border-b-0 md:border-r border-main">
+<div class="text-muted text-[11px]">Source 02</div>
+<div class="text-primary font-medium mt-1">Endpoints</div>
+</div>
+<div class="p-3 border-b md:border-b-0 md:border-r border-main">
+<div class="text-muted text-[11px]">Source 03</div>
+<div class="text-primary font-medium mt-1">Network flows</div>
+</div>
+<div class="p-3">
+<div class="text-muted text-[11px]">Source 04</div>
+<div class="text-primary font-medium mt-1">Databases</div>
+</div>
+</div>
+<p class="text-sm text-muted leading-relaxed">
+              ARGUS-X standardizes heterogeneous telemetry into a unified causality graph. Rather than asking analysts to craft complicated join queries across SIEM indexes, the engine establishes causal links, traces lateral progression, and identifies critical inflection points.
+            </p>
+</div>
+</div>
+</section>
+<!-- How It Works Pipeline -->
+<section class="mt-28 pt-16 border-t border-main" id="pipeline">
+<div class="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
+<div>
+<span class="text-xs font-mono-code text-[#10b981] uppercase tracking-wider">Analysis Pipeline</span>
+<h3 class="text-xl font-semibold text-primary mt-1">Deterministic correlation in six phases</h3>
+</div>
+<span class="text-xs text-muted font-mono-code">Automated verification loop</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6 pt-4 border-t border-main">
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code text-muted">01</div>
+<div class="text-sm font-semibold text-primary">Ingest</div>
+<p class="text-xs text-muted leading-relaxed">Multi-source CSV, streams, and host telemetry</p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code text-muted">02</div>
+<div class="text-sm font-semibold text-primary">Normalize</div>
+<p class="text-xs text-muted leading-relaxed">Unified timestamp schema resolution</p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code text-muted">03</div>
+<div class="text-sm font-semibold text-primary">Correlate</div>
+<p class="text-xs text-muted leading-relaxed">Identity and session causality graphs</p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code text-muted">04</div>
+<div class="text-sm font-semibold text-primary">Reconstruct</div>
+<p class="text-xs text-muted leading-relaxed">Multi-stage progression attack chains</p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code text-muted">05</div>
+<div class="text-sm font-semibold text-primary">Verify</div>
+<p class="text-xs text-muted leading-relaxed">Evidence grounding and gap detection</p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code text-muted">06</div>
+<div class="text-sm font-semibold text-primary">Analyze</div>
+<p class="text-xs text-muted leading-relaxed">Impact evaluation and counterfactual stops</p>
+</div>
+</div>
+</section>
+<!-- Restrained Preview -->
+<section class="mt-28 pt-16 border-t border-main" id="architecture">
+<div class="flex items-center justify-between mb-4">
+<span class="text-xs font-mono-code text-muted uppercase tracking-wider">Product Sample</span>
+<span class="text-xs font-mono-code text-muted">Verified Reconstruction</span>
+</div>
+<div class="border border-main bg-surface rounded p-6 sm:p-8 space-y-4">
+<div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-main">
+<div>
+<span class="text-xs font-mono-code text-[#10b981] uppercase tracking-wider">Attack Reconstructed</span>
+<div class="text-xl font-semibold font-mono-code text-primary mt-1">
+                PC-25 <span class="text-muted">→</span> SRV-02 <span class="text-muted">→</span> <span class="text-[#ef4444]">DB-01</span>
+</div>
+</div>
+<div class="flex items-center space-x-6 text-xs font-mono-code text-muted">
+<div><span class="text-primary font-semibold">8</span> events</div>
+<div><span class="text-[#10b981] font-semibold">100%</span> confidence</div>
+<div><span class="text-primary font-semibold">3</span> hosts</div>
+<div><span class="text-[#ef4444] font-semibold">DB-01</span> target</div>
+</div>
+</div>
+<p class="text-sm text-muted leading-relaxed">
+            The attacker used the account <span class="font-mono-code text-primary">"rahul"</span> to move from <span class="font-mono-code text-primary">PC-25</span> to <span class="font-mono-code text-primary">SRV-02</span> via WinRM and subsequently reached the database host <span class="font-mono-code text-[#ef4444]">DB-01</span> through PostgreSQL port 5432.
+          </p>
+</div>
+</section>
+<!-- Bottom CTA -->
+<section class="mt-24 pt-12 border-t border-main flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+<div>
+<h3 class="text-xl font-semibold text-primary">Turn disjointed telemetry into clear findings.</h3>
+<p class="text-xs text-muted mt-1">Load the pre-compiled benchmark incident or bring your own telemetry.</p>
+</div>
+<button class="px-5 py-2.5 bg-[#10b981] hover:bg-[#059669] text-gray-950 text-xs font-medium rounded shadow-sm flex items-center space-x-2 shrink-0" onclick="switchView('new-investigation')">
+<span>Start Investigation</span>
+<span class="font-mono-code">→</span>
+</button>
+</section>
+</main>
+</section>
+<!-- ========================================================================= -->
+<!-- 2. NEW INVESTIGATION / DATA IMPORT VIEW -->
+<!-- ========================================================================= -->
+<section class="hidden min-h-screen flex flex-col bg-main text-primary" id="view-new-investigation">
+<!-- Top Nav -->
+<header class="w-full border-b border-main bg-main/90 backdrop-blur sticky top-0 z-40">
+<div class="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
+<div class="flex items-center space-x-3 cursor-pointer" onclick="switchView('landing')">
+<div class="w-6 h-6 rounded bg-surface border border-main flex items-center justify-center shadow-sm">
+<span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+</div>
+<span class="text-sm font-semibold tracking-wide text-primary">ARGUS-X</span>
+<span class="text-xs text-muted font-mono-code">/ New Investigation</span>
+</div>
+<div class="flex items-center space-x-4">
+<!-- Theme Toggle -->
+<button class="flex items-center space-x-1 px-2 py-1 rounded border border-main bg-surface text-xs text-muted hover:text-primary transition-colors" onclick="toggleTheme()">
+<span class="material-symbols-outlined text-[15px]">brightness_medium</span>
+</button>
+<button class="text-xs text-muted hover:text-primary transition-colors font-mono-code" onclick="switchView('landing')">
+            Close ✕
+          </button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 max-w-4xl w-full mx-auto px-6 py-12">
+<div class="mb-8">
+<h2 class="text-2xl font-semibold text-primary tracking-tight">Select Investigation Telemetry</h2>
+<p class="text-sm text-muted mt-1">Load the pre-correlated multi-source incident benchmark or supply four local CSV telemetry feeds.</p>
+</div>
+<!-- Quick Demo Option -->
+<div class="border border-main bg-surface p-6 rounded mb-8 space-y-4">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<div>
+<div class="inline-flex items-center space-x-1.5 px-2 py-0.5 rounded bg-badge text-[11px] font-mono-code text-[#10b981] mb-2">
+              BENCHMARK DATASET
+            </div>
+<h3 class="text-base font-semibold text-primary">Pre-Verified Multi-Source Incident</h3>
+<p class="text-xs text-muted mt-0.5">Four synchronized telemetry feeds containing 809 events and 1 reconstructed multi-hop attack.</p>
+</div>
+<button class="px-5 py-2.5 bg-[#10b981] hover:bg-[#059669] text-gray-950 text-xs font-medium rounded transition-colors flex items-center justify-center space-x-2 shrink-0" id="btn-load-demo" onclick="loadDemoIncident()">
+<span>Load Demo Incident (809 events across 4 sources)</span>
+<span class="font-mono-code">→</span>
+</button>
+</div>
+<div class="hidden text-xs font-mono-code text-[#10b981] pt-2 border-t border-main flex items-center space-x-2" id="demo-loaded-badge">
+<span>✓</span>
+<span>DEMO INCIDENT LOADED: 809 events across 4 sources ready for correlation</span>
+</div>
+</div>
+<!-- Or Upload Custom Files -->
+<div class="space-y-4">
+<div class="flex items-center justify-between pb-2 border-b border-main">
+<span class="text-xs uppercase tracking-wider font-mono-code text-muted">Custom Telemetry Files (CSV)</span>
+<span class="text-xs font-mono-code text-muted" id="source-ready-count">0 / 4 sources ready</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Source 1: Auth -->
+<div class="p-4 rounded border border-main bg-surface flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-xs">
+<span class="font-semibold text-primary">Authentication Logs</span>
+<span class="text-[11px] font-mono-code text-muted" id="status-auth">Pending</span>
+</div>
+<p class="text-xs text-muted mt-1">Interactive sessions, Kerberos/logon events</p>
+<div class="text-xs font-mono-code text-[#10b981] mt-2 hidden" id="detail-auth"></div>
+</div>
+<label class="mt-4 cursor-pointer inline-flex items-center justify-center px-3 py-1.5 border border-main hover:bg-surface-hover text-xs font-mono-code text-primary rounded transition-colors">
+<span>Choose CSV</span>
+<input accept=".csv" class="hidden" onchange="handleFileSelected(event, 'auth')" type="file"/>
+</label>
+</div>
+<!-- Source 2: Endpoint -->
+<div class="p-4 rounded border border-main bg-surface flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-xs">
+<span class="font-semibold text-primary">Endpoint Logs</span>
+<span class="text-[11px] font-mono-code text-muted" id="status-endpoint">Pending</span>
+</div>
+<p class="text-xs text-muted mt-1">Process trees, command lines, memory access</p>
+<div class="text-xs font-mono-code text-[#10b981] mt-2 hidden" id="detail-endpoint"></div>
+</div>
+<label class="mt-4 cursor-pointer inline-flex items-center justify-center px-3 py-1.5 border border-main hover:bg-surface-hover text-xs font-mono-code text-primary rounded transition-colors">
+<span>Choose CSV</span>
+<input accept=".csv" class="hidden" onchange="handleFileSelected(event, 'endpoint')" type="file"/>
+</label>
+</div>
+<!-- Source 3: Network -->
+<div class="p-4 rounded border border-main bg-surface flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-xs">
+<span class="font-semibold text-primary">Network Connections</span>
+<span class="text-[11px] font-mono-code text-muted" id="status-network">Pending</span>
+</div>
+<p class="text-xs text-muted mt-1">Inbound/outbound flows, port activity</p>
+<div class="text-xs font-mono-code text-[#10b981] mt-2 hidden" id="detail-network"></div>
+</div>
+<label class="mt-4 cursor-pointer inline-flex items-center justify-center px-3 py-1.5 border border-main hover:bg-surface-hover text-xs font-mono-code text-primary rounded transition-colors">
+<span>Choose CSV</span>
+<input accept=".csv" class="hidden" onchange="handleFileSelected(event, 'network')" type="file"/>
+</label>
+</div>
+<!-- Source 4: Application -->
+<div class="p-4 rounded border border-main bg-surface flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between text-xs">
+<span class="font-semibold text-primary">Application &amp; Database</span>
+<span class="text-[11px] font-mono-code text-muted" id="status-app">Pending</span>
+</div>
+<p class="text-xs text-muted mt-1">Database statements, query execution</p>
+<div class="text-xs font-mono-code text-[#10b981] mt-2 hidden" id="detail-app"></div>
+</div>
+<label class="mt-4 cursor-pointer inline-flex items-center justify-center px-3 py-1.5 border border-main hover:bg-surface-hover text-xs font-mono-code text-primary rounded transition-colors">
+<span>Choose CSV</span>
+<input accept=".csv" class="hidden" onchange="handleFileSelected(event, 'app')" type="file"/>
+</label>
+</div>
+</div>
+<div class="pt-6 border-t border-main flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="text-xs text-muted font-mono-code" id="upload-instruction">
+            Select files or click "Load Demo Incident" above to instantly populate all 4 sources.
+          </div>
+<button class="w-full sm:w-auto px-6 py-2.5 rounded bg-surface border border-main text-muted text-xs font-medium cursor-not-allowed transition-colors" disabled="" id="btn-analyze-telemetry" onclick="startAnalysis()">
+            Run Telemetry Correlation
+          </button>
+</div>
+</div>
+</main>
+</section>
+<!-- ========================================================================= -->
+<!-- 3. DIGNIFIED SOC ANALYSIS OVERLAY -->
+<!-- ========================================================================= -->
+<div class="hidden fixed inset-0 z-50 bg-main/95 backdrop-blur-sm flex items-center justify-center px-6" id="view-analysis">
+<div class="max-w-md w-full border border-main bg-surface p-8 rounded shadow-lg space-y-6">
+<div class="flex items-center justify-between border-b border-main pb-4">
+<div class="flex items-center space-x-2">
+<span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+<span class="text-xs font-semibold uppercase tracking-wider text-primary font-mono-code">ARGUS-X Engine</span>
+</div>
+<span class="text-xs font-mono-code text-muted" id="soc-status-text">INITIALIZING</span>
+</div>
+<div class="space-y-3">
+<h4 class="text-base font-semibold text-primary">ARGUS-X is analyzing</h4>
+<p class="text-xs text-muted" id="soc-subtext">Reading telemetry and normalizing timestamps...</p>
+<!-- Dignified subtle pulsing progress line -->
+<div class="w-full bg-main h-1.5 rounded-full overflow-hidden border border-main mt-3">
+<div class="h-full bg-[#10b981] transition-all duration-300 w-[15%]" id="soc-progress-bar"></div>
+</div>
+</div>
+<div class="text-[11px] font-mono-code text-muted space-y-1.5 pt-2">
+<div class="flex justify-between"><span>Events Processed:</span><span class="text-primary font-medium" id="soc-ev-count">809 events</span></div>
+<div class="flex justify-between"><span>Causal Sequences:</span><span class="text-primary font-medium">1 confirmed chain</span></div>
+<div class="flex justify-between"><span>Engine State:</span><span class="text-[#10b981]" id="soc-engine-state">CORRELATING</span></div>
+</div>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- 4. MAIN INVESTIGATION DASHBOARD -->
+<!-- ========================================================================= -->
+<section class="hidden min-h-screen flex flex-col bg-main text-primary" id="view-dashboard">
+<!-- Top Incident Header -->
+<header class="w-full border-b border-main bg-surface sticky top-0 z-30">
+<div class="px-6 h-14 flex items-center justify-between">
+<!-- Left Title + Breadcrumb -->
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchView('landing')">
+<div class="w-5 h-5 rounded bg-main border border-main flex items-center justify-center">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+</div>
+<span class="text-xs font-semibold tracking-wider text-primary">ARGUS-X</span>
+</div>
+<span class="text-muted text-xs">/</span>
+<span class="text-xs text-muted font-mono-code">Incident-001</span>
+<span class="hidden sm:inline-flex items-center space-x-1.5 px-2 py-0.5 rounded text-[11px] font-mono-code bg-[#10b981]/10 text-[#10b981]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+<span>Reconstructed</span>
+</span>
+</div>
+<!-- Right Side: Clean Metrics Row & Controls -->
+<div class="flex items-center space-x-4 sm:space-x-6 text-xs">
+<!-- Horizontal Hairline Metrics Row -->
+<div class="hidden md:flex items-center space-x-4 font-mono-code text-muted text-[11px]">
+<div><span class="text-primary font-semibold">8</span> EVENTS</div>
+<span class="text-muted">·</span>
+<div><span class="text-[#10b981] font-semibold">100%</span> CONFIDENCE</div>
+<span class="text-muted">·</span>
+<div><span class="text-[#10b981] font-semibold">100%</span> COMPLETE</div>
+<span class="text-muted">·</span>
+<div><span class="text-primary font-semibold">3</span> HOSTS</div>
+<span class="text-muted">·</span>
+<div><span class="text-[#ef4444] font-semibold">1</span> CRITICAL ASSET</div>
+</div>
+<!-- Theme Toggle in Dashboard -->
+<button class="flex items-center space-x-1 px-2.5 py-1 rounded border border-main bg-main text-xs text-muted hover:text-primary transition-colors" onclick="toggleTheme()" title="Toggle theme">
+<span class="material-symbols-outlined text-[15px]">light_mode</span>
+</button>
+<button class="px-2.5 py-1 text-xs border border-main hover:bg-surface-hover rounded font-mono-code text-muted hover:text-primary transition-colors" onclick="switchView('new-investigation')">
+            New
+          </button>
+</div>
+</div>
+</header>
+<!-- Workspace Container (Collapsible Sidebar + Dynamic Main + Synchronized Inspector) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- COLLAPSIBLE SIDEBAR -->
+<aside class="w-56 border-r border-main bg-surface flex flex-col justify-between shrink-0 transition-all duration-200 select-none" id="sidebar-nav">
+<div>
+<!-- Sidebar Header with sleek Collapse Toggle -->
+<div class="p-3 border-b border-main flex items-center justify-between">
+<span class="text-[11px] font-mono-code uppercase tracking-wider text-muted px-2" id="sidebar-nav-title">Navigation</span>
+<button class="p-1 rounded text-muted hover:text-primary hover:bg-main transition-colors" onclick="toggleSidebar()" title="Toggle Sidebar">
+<span class="material-symbols-outlined text-[18px]" id="sidebar-collapse-icon">first_page</span>
+</button>
+</div>
+<!-- Nav Items -->
+<div class="py-3 px-2 space-y-1 text-xs">
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 bg-main text-primary font-medium group transition-colors" id="nav-overview" onclick="setDashboardTab('overview')">
+<span class="material-symbols-outlined text-[18px] text-[#10b981]">dashboard</span>
+<span class="sidebar-label">Overview</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-timeline" onclick="setDashboardTab('timeline')">
+<span class="material-symbols-outlined text-[18px]">timeline</span>
+<span class="sidebar-label">Timeline</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-graph" onclick="setDashboardTab('graph')">
+<span class="material-symbols-outlined text-[18px]">hub</span>
+<span class="sidebar-label">Attack Graph</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-evidence" onclick="setDashboardTab('evidence')">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="sidebar-label">Evidence &amp; Gaps</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-impact" onclick="setDashboardTab('impact')">
+<span class="material-symbols-outlined text-[18px]">crisis_alert</span>
+<span class="sidebar-label">Impact Assessment</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-ai" onclick="setDashboardTab('ai')">
+<span class="material-symbols-outlined text-[18px]">smart_toy</span>
+<span class="sidebar-label">AI Investigator</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-whatif" onclick="setDashboardTab('whatif')">
+<span class="material-symbols-outlined text-[18px]">alt_route</span>
+<span class="sidebar-label">What-If Simulation</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-replay" onclick="setDashboardTab('replay')">
+<span class="material-symbols-outlined text-[18px]">play_circle</span>
+<span class="sidebar-label">Attack Replay</span>
+</button>
+<button class="w-full text-left px-3 py-2 rounded flex items-center space-x-3 text-muted hover:text-primary hover:bg-main transition-colors group" id="nav-infra" onclick="setDashboardTab('infra')">
+<span class="material-symbols-outlined text-[18px]">dns</span>
+<span class="sidebar-label">Infrastructure</span>
+</button>
+</div>
+</div>
+<!-- Sidebar Telemetry Summary Footer -->
+<div class="p-4 border-t border-main font-mono-code text-[11px] text-muted space-y-1" id="sidebar-footer-stats">
+<div class="text-[10px] uppercase text-muted font-sans font-semibold tracking-wider">Telemetry Stats</div>
+<div class="flex justify-between"><span>Auth:</span><span class="text-primary">232</span></div>
+<div class="flex justify-between"><span>Endpoint:</span><span class="text-primary">223</span></div>
+<div class="flex justify-between"><span>Network:</span><span class="text-primary">203</span></div>
+<div class="flex justify-between"><span>App/DB:</span><span class="text-primary">151</span></div>
+<div class="flex justify-between text-[#10b981] pt-1 border-t border-main"><span>Total:</span><span>809 events</span></div>
+</div>
+</aside>
+<!-- DYNAMIC MAIN CONTENT WORKSPACE -->
+<main class="flex-1 flex flex-col min-w-0 overflow-y-auto bg-main p-6 sm:p-8">
+<!-- ============================================== -->
+<!-- TAB 1: OVERVIEW (Answers the 4 Core Questions) -->
+<!-- ============================================== -->
+<div class="space-y-8 max-w-5xl" id="tab-overview">
+<!-- Attack Path Heading -->
+<div class="space-y-3 pb-6 border-b border-main">
+<div class="flex items-center space-x-2 text-xs font-mono-code text-[#10b981]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+<span>CONFIRMED MULTI-HOP ATTACK PATH</span>
+</div>
+<div class="text-2xl sm:text-3xl font-semibold font-mono-code text-primary flex items-center space-x-3">
+<button class="hover:underline text-[#10b981]" onclick="selectHost('PC-25')">PC-25</button>
+<span class="text-muted">→</span>
+<button class="hover:underline text-[#10b981]" onclick="selectHost('SRV-02')">SRV-02</button>
+<span class="text-muted">→</span>
+<button class="hover:underline text-[#ef4444]" onclick="selectHost('DB-01')">DB-01</button>
+</div>
+<p class="text-sm text-muted leading-relaxed pt-1">
+              User account <span class="font-mono-code text-primary font-medium">rahul</span> initiated workstation access at <span class="font-mono-code text-primary">PC-25</span>, dumped credentials to execute lateral movement onto middleware host <span class="font-mono-code text-primary">SRV-02</span>, and escalated privileges to query production database <span class="font-mono-code text-[#ef4444] font-medium">DB-01</span>.
+            </p>
+</div>
+<!-- 4 Core Forensic Questions -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code uppercase tracking-wider text-muted">01 · WHAT HAPPENED?</div>
+<p class="text-sm text-primary leading-relaxed">
+                Single threat actor performed credential harvesting from memory followed by authenticated remote command execution across 3 infrastructure tiers.
+              </p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code uppercase tracking-wider text-muted">02 · WHERE DID IT GO?</div>
+<p class="text-sm text-primary leading-relaxed">
+                Workstation <span class="font-mono-code">PC-25</span> (10.0.1.25) to Application Server <span class="font-mono-code">SRV-02</span> (10.0.2.10) to Postgres cluster <span class="font-mono-code text-[#ef4444]">DB-01</span> (10.0.4.15).
+              </p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code uppercase tracking-wider text-muted">03 · WHAT EVIDENCE SUPPORTS IT?</div>
+<p class="text-sm text-primary leading-relaxed">
+                Correlated login sessions, LSASS dump process execution, WinRM port 5985 traffic, and port 5432 database queries with 100% causal sequence verification.
+              </p>
+</div>
+<div class="space-y-1.5">
+<div class="text-xs font-mono-code uppercase tracking-wider text-muted">04 · WHAT WAS THE IMPACT?</div>
+<p class="text-sm text-primary leading-relaxed">
+                Direct query access to customer table on <span class="font-mono-code text-[#ef4444]">DB-01</span>. 8 surrounding network hosts confirmed uncompromised.
+              </p>
+</div>
+</div>
+<!-- Vertical Attack Story (Clean hairline list, no heavy box cards) -->
+<div class="pt-6 border-t border-main space-y-4">
+<div class="flex items-center justify-between">
+<h3 class="text-sm font-semibold text-primary">Reconstructed Sequence</h3>
+<span class="text-xs text-muted font-mono-code">Click any event to inspect</span>
+</div>
+<div class="divide-y divide-main border-y border-main" id="overview-event-list">
+<!-- Rendered via JS -->
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 2: TIMELINE                                -->
+<!-- ============================================== -->
+<div class="hidden space-y-6 max-w-5xl" id="tab-timeline">
+<div class="flex items-center justify-between pb-4 border-b border-main">
+<div>
+<h3 class="text-base font-semibold text-primary">Chronological Incident Timeline</h3>
+<p class="text-xs text-muted mt-0.5">Strict causal ordering across 4 distinct telemetry sources.</p>
+</div>
+<span class="text-xs font-mono-code text-muted">8 Events</span>
+</div>
+<!-- Clean vertical chronological flow with status dots -->
+<div class="space-y-6 relative before:absolute before:inset-0 before:left-[11px] before:w-0.5 before:bg-main">
+<div class="space-y-6 relative" id="timeline-vflow">
+<!-- Rendered via JS -->
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 3: ATTACK GRAPH                            -->
+<!-- ============================================== -->
+<div class="hidden space-y-6 max-w-5xl flex-1 flex flex-col" id="tab-graph">
+<div class="flex items-center justify-between pb-4 border-b border-main">
+<div>
+<h3 class="text-base font-semibold text-primary">Interactive Attack Topology</h3>
+<p class="text-xs text-muted mt-0.5">Causal node-edge canvas. Select nodes or connectors to inspect telemetry grounding.</p>
+</div>
+<span class="text-xs font-mono-code text-[#10b981]">React Flow Architecture</span>
+</div>
+<div class="flex-1 min-h-[380px] border border-main bg-surface rounded p-8 flex flex-col justify-center items-center">
+<div class="w-full max-w-md space-y-4">
+<!-- Node 1: PC-25 -->
+<div class="cursor-pointer p-4 border border-main bg-main hover:border-[#10b981] rounded transition-all flex items-center justify-between group" id="graph-node-pc25" onclick="selectHost('PC-25')">
+<div class="flex items-center space-x-3">
+<span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+<div>
+<div class="text-xs font-semibold font-mono-code text-primary">PC-25</div>
+<div class="text-[11px] text-muted">Initial Access &amp; Credential Harvesting</div>
+</div>
+</div>
+<span class="text-[10px] font-mono-code text-muted">4 events</span>
+</div>
+<!-- Edge 1: Lateral Movement -->
+<div class="cursor-pointer mx-auto w-11/12 py-2 px-3 border border-main hover:border-[#10b981] bg-surface rounded flex items-center justify-between font-mono-code text-xs transition-colors" id="graph-edge-1" onclick="selectEdge('NETWORK_0002')">
+<span class="text-muted flex items-center space-x-1.5">
+<span class="text-[#10b981]">↓</span>
+<span>NETWORK_0002 (WinRM / 5985)</span>
+</span>
+<span class="text-[10px] text-[#10b981] font-sans">Why this connection?</span>
+</div>
+<!-- Node 2: SRV-02 -->
+<div class="cursor-pointer p-4 border border-main bg-main hover:border-[#10b981] rounded transition-all flex items-center justify-between group" id="graph-node-srv02" onclick="selectHost('SRV-02')">
+<div class="flex items-center space-x-3">
+<span class="w-2.5 h-2.5 rounded-full bg-[#f59e0b]"></span>
+<div>
+<div class="text-xs font-semibold font-mono-code text-primary">SRV-02</div>
+<div class="text-[11px] text-muted">Lateral Pivot &amp; Privilege Escalation</div>
+</div>
+</div>
+<span class="text-[10px] font-mono-code text-muted">2 events</span>
+</div>
+<!-- Edge 2: Database Connection -->
+<div class="cursor-pointer mx-auto w-11/12 py-2 px-3 border border-main hover:border-[#ef4444] bg-surface rounded flex items-center justify-between font-mono-code text-xs transition-colors" id="graph-edge-2" onclick="selectEdge('NETWORK_0006')">
+<span class="text-muted flex items-center space-x-1.5">
+<span class="text-[#ef4444]">↓</span>
+<span>NETWORK_0006 (Postgres / 5432)</span>
+</span>
+<span class="text-[10px] text-[#ef4444] font-sans">Why this connection?</span>
+</div>
+<!-- Node 3: DB-01 -->
+<div class="cursor-pointer p-4 border border-[#ef4444]/40 bg-main hover:border-[#ef4444] rounded transition-all flex items-center justify-between group" id="graph-node-db01" onclick="selectHost('DB-01')">
+<div class="flex items-center space-x-3">
+<span class="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></span>
+<div>
+<div class="text-xs font-semibold font-mono-code text-primary">DB-01</div>
+<div class="text-[11px] text-[#ef4444]">Critical Asset · Unlawful Database Read</div>
+</div>
+</div>
+<span class="text-[10px] font-mono-code text-[#ef4444] font-medium">Target</span>
+</div>
+</div>
+</div>
+<div class="p-4 border border-main bg-surface rounded text-xs text-muted" id="graph-connection-explanation">
+            Click any connector above to view the causality reasoning and raw telemetry grounding in the Inspector.
+          </div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 4: EVIDENCE & GAPS                         -->
+<!-- ============================================== -->
+<div class="hidden space-y-8 max-w-5xl" id="tab-evidence">
+<div class="pb-4 border-b border-main">
+<h3 class="text-base font-semibold text-primary">Evidence Citations &amp; Telemetry Gaps</h3>
+<p class="text-xs text-muted mt-0.5">Grounding references, confidence attribution, and telemetry coverage recommendations.</p>
+</div>
+<!-- Verified Grounding References -->
+<div class="space-y-4">
+<div class="text-xs font-mono-code uppercase tracking-wider text-muted">Verified Evidence Grounding</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono-code">
+<div class="p-4 border border-main bg-surface rounded space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-primary font-bold">NETWORK_0002</span>
+<span class="text-[#10b981] text-[10px]">100% CONFIDENCE</span>
+</div>
+<div class="text-muted text-[11px]">Workstation to server remote session: PC-25 → SRV-02</div>
+<div class="pt-2 border-t border-main text-[11px] text-muted space-y-1">
+<div>Supporting logs: <button class="text-[#10b981] underline" onclick="inspectRawEvent('NETWORK_0001')">NETWORK_0001</button>, <button class="text-[#10b981] underline" onclick="inspectRawEvent('ENDPOINT_0002')">ENDPOINT_0002</button></div>
+<div class="text-muted">Direct correlation with memory dumping token acquisition (Δt: 190s).</div>
+</div>
+</div>
+<div class="p-4 border border-main bg-surface rounded space-y-2">
+<div class="flex items-center justify-between">
+<span class="text-primary font-bold">NETWORK_0006</span>
+<span class="text-[#10b981] text-[10px]">100% CONFIDENCE</span>
+</div>
+<div class="text-muted text-[11px]">Database cluster connection: SRV-02 → DB-01</div>
+<div class="pt-2 border-t border-main text-[11px] text-muted space-y-1">
+<div>Supporting logs: <button class="text-[#10b981] underline" onclick="inspectRawEvent('ENDPOINT_0003')">ENDPOINT_0003</button>, <button class="text-[#10b981] underline" onclick="inspectRawEvent('APPLICATION_0004')">APPLICATION_0004</button></div>
+<div class="text-muted">Correlated with elevated role assignment on SRV-02 (Δt: 140s).</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Identified Telemetry Gaps & Recommendations -->
+<div class="space-y-4 pt-4 border-t border-main">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono-code uppercase tracking-wider text-[#f59e0b]">Detected Evidence Gap</span>
+<span class="text-[11px] font-mono-code text-[#f59e0b] px-2 py-0.5 rounded bg-[#f59e0b]/10">1 Gap Identified</span>
+</div>
+<div class="p-5 border border-main bg-surface rounded space-y-3 text-xs">
+<div class="flex items-start space-x-2.5">
+<span class="px-1.5 py-0.5 rounded bg-[#f59e0b]/10 text-[#f59e0b] text-[10px] font-mono-code font-bold">GAP 01</span>
+<div>
+<div class="text-primary font-semibold">Outbound Egress Connection Missing Flow Records</div>
+<div class="text-muted text-xs mt-0.5">PC-25 communicated with external IP 198.51.100.14 without directional egress telemetry.</div>
+</div>
+</div>
+<div class="pl-7 space-y-2 text-xs">
+<div><span class="text-muted font-mono-code">Impact on Reconstruction:</span> Minimal; lateral chain remains 100% verified internally.</div>
+<div><span class="text-[#10b981] font-mono-code">Engine Recommendation:</span> Enable flow logging on edge firewalls to verify potential data exfiltration.</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 5: IMPACT ASSESSMENT                       -->
+<!-- ============================================== -->
+<div class="hidden space-y-8 max-w-5xl" id="tab-impact">
+<div class="pb-4 border-b border-main">
+<h3 class="text-base font-semibold text-primary">Attack Blast Radius Assessment</h3>
+<p class="text-xs text-muted mt-0.5">High-confidence assessment differentiating compromised assets from verified clean environment.</p>
+</div>
+<!-- 3 Compromised vs 8 Clean -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+<!-- Compromised -->
+<div class="border border-[#ef4444]/30 bg-surface rounded p-5 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-[#ef4444] font-mono-code uppercase">Compromised Assets (3)</span>
+<span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-[#ef4444]/10 text-[#ef4444]">CRITICAL BLAST</span>
+</div>
+<div class="space-y-2 font-mono-code">
+<div class="p-2.5 rounded bg-main border border-main flex justify-between items-center cursor-pointer hover:border-[#10b981]" onclick="selectHost('PC-25')">
+<div>
+<div class="text-primary font-bold">PC-25</div>
+<div class="text-[11px] text-muted">Foothold &amp; Credential Dump</div>
+</div>
+<span class="text-[10px] text-muted">Workstation</span>
+</div>
+<div class="p-2.5 rounded bg-main border border-main flex justify-between items-center cursor-pointer hover:border-[#10b981]" onclick="selectHost('SRV-02')">
+<div>
+<div class="text-primary font-bold">SRV-02</div>
+<div class="text-[11px] text-muted">Middleware Privilege Escalation</div>
+</div>
+<span class="text-[10px] text-muted">App Server</span>
+</div>
+<div class="p-2.5 rounded bg-main border border-[#ef4444]/40 flex justify-between items-center cursor-pointer hover:border-[#ef4444]" onclick="selectHost('DB-01')">
+<div>
+<div class="text-[#ef4444] font-bold">DB-01</div>
+<div class="text-[11px] text-muted">Critical Customer Records Database</div>
+</div>
+<span class="text-[10px] text-[#ef4444] font-medium">Target</span>
+</div>
+</div>
+</div>
+<!-- Clean Verified Environment -->
+<div class="border border-main bg-surface rounded p-5 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-[#10b981] font-mono-code uppercase">Verified Clean Hosts (8)</span>
+<span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-[#10b981]/10 text-[#10b981]">NO LATERAL SPREAD</span>
+</div>
+<div class="grid grid-cols-2 gap-2 font-mono-code text-[11px]">
+<div class="p-2 rounded bg-main border border-main text-muted">DB-02 (Standby)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">SRV-01 (DC-1)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">SRV-03 (Storage)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">PC-01 (IT Admin)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">PC-07 (Engineering)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">PC-12 (Finance)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">PC-18 (Ops)</div>
+<div class="p-2 rounded bg-main border border-main text-muted">PC-31 (HR)</div>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 6: AI INVESTIGATOR                         -->
+<!-- ============================================== -->
+<div class="hidden space-y-6 max-w-5xl" id="tab-ai">
+<div class="pb-4 border-b border-main">
+<h3 class="text-base font-semibold text-primary">AI Security Investigator (Evidence Grounded)</h3>
+<p class="text-xs text-muted mt-0.5">Strictly grounded telemetry answers. Cites specific event IDs and reports confidence attribution.</p>
+</div>
+<div class="space-y-3">
+<div class="flex space-x-2">
+<input class="flex-1 px-3.5 py-2 rounded bg-surface border border-main text-xs text-primary placeholder-muted font-mono-code focus:outline-none focus:border-[#10b981]" id="ai-input" placeholder="Ask what happened... e.g., How did the attacker reach DB-01?" type="text"/>
+<button class="px-5 py-2 bg-[#10b981] hover:bg-[#059669] text-gray-950 text-xs font-medium rounded transition-colors" onclick="submitAIQuery()">
+                Ask
+              </button>
+</div>
+<!-- Forensic Suggested Queries -->
+<div class="flex flex-wrap gap-2 text-xs font-mono-code text-muted items-center">
+<span class="text-[11px]">Suggested:</span>
+<button class="px-2 py-1 rounded bg-surface border border-main hover:text-primary transition-colors text-[11px]" onclick="askPresetAI('How did the attacker reach DB-01?')">
+                How did the attacker reach DB-01?
+              </button>
+<button class="px-2 py-1 rounded bg-surface border border-main hover:text-primary transition-colors text-[11px]" onclick="askPresetAI('What evidence supports lateral movement?')">
+                Evidence for lateral movement?
+              </button>
+<button class="px-2 py-1 rounded bg-surface border border-main hover:text-primary transition-colors text-[11px]" onclick="askPresetAI('Where could the attack have been stopped?')">
+                Where could it be stopped?
+              </button>
+</div>
+</div>
+<!-- Grounded Answer Card -->
+<div class="border border-main bg-surface p-6 rounded space-y-4 text-xs" id="ai-result-card">
+<div class="flex items-center justify-between pb-3 border-b border-main">
+<span class="text-muted font-mono-code">QUESTION:</span>
+<span class="text-primary font-semibold font-mono-code" id="ai-display-q">How did the attacker reach DB-01?</span>
+</div>
+<div class="space-y-1.5">
+<span class="text-xs uppercase tracking-wider text-[#10b981] font-mono-code">Grounded Finding</span>
+<p class="text-primary leading-relaxed text-sm" id="ai-display-a">
+                The attacker moved from PC-25 to SRV-02 via WinRM port 5985 and subsequently established a database session to DB-01 over PostgreSQL port 5432 after local privilege escalation.
+              </p>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-main font-mono-code text-xs">
+<div>
+<span class="text-muted block text-[11px] mb-1">CITED TELEMETRY REFERENCES:</span>
+<div class="flex flex-wrap gap-2 text-[#10b981]" id="ai-display-ev">
+<button class="underline" onclick="inspectRawEvent('NETWORK_0002')">NETWORK_0002</button>
+<button class="underline" onclick="inspectRawEvent('NETWORK_0006')">NETWORK_0006</button>
+<button class="underline" onclick="inspectRawEvent('APPLICATION_0004')">APPLICATION_0004</button>
+</div>
+</div>
+<div>
+<span class="text-muted block text-[11px] mb-1">EVIDENCE CONFIDENCE:</span>
+<span class="text-[#10b981] font-semibold" id="ai-display-conf">100% Grounded</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 7: WHAT-IF SIMULATION                      -->
+<!-- ============================================== -->
+<div class="hidden space-y-6 max-w-5xl" id="tab-whatif">
+<div class="pb-4 border-b border-main">
+<h3 class="text-base font-semibold text-primary">Counterfactual Simulation (What-If)</h3>
+<p class="text-xs text-muted mt-0.5">Simulate defensive interception across attack stages to calculate blast collapse.</p>
+</div>
+<div class="space-y-3">
+<span class="text-xs text-muted font-mono-code">SELECT INFLECTION STAGE TO SIMULATE BLOCKING:</span>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs font-mono-code">
+<button class="p-3 rounded border border-main bg-surface hover:border-[#10b981] text-left transition-colors" id="btn-wf-initial" onclick="runCounterfactual('initial')">
+<div class="text-muted text-[10px]">STAGE 1</div>
+<div class="font-medium text-primary mt-0.5">Initial Access</div>
+</button>
+<button class="p-3 rounded border border-main bg-surface hover:border-[#10b981] text-left transition-colors" id="btn-wf-exec" onclick="runCounterfactual('exec')">
+<div class="text-muted text-[10px]">STAGE 2</div>
+<div class="font-medium text-primary mt-0.5">Execution</div>
+</button>
+<button class="p-3 rounded border border-main bg-surface hover:border-[#10b981] text-left transition-colors" id="btn-wf-cred" onclick="runCounterfactual('cred')">
+<div class="text-muted text-[10px]">STAGE 3</div>
+<div class="font-medium text-primary mt-0.5">Credential Access</div>
+</button>
+<button class="p-3 rounded border border-[#10b981] bg-main text-left transition-colors" id="btn-wf-lateral" onclick="runCounterfactual('lateral')">
+<div class="text-[#10b981] text-[10px]">STAGE 4 ★</div>
+<div class="font-medium text-primary mt-0.5">Lateral Movement</div>
+</button>
+<button class="p-3 rounded border border-main bg-surface hover:border-[#10b981] text-left transition-colors" id="btn-wf-priv" onclick="runCounterfactual('priv')">
+<div class="text-muted text-[10px]">STAGE 5</div>
+<div class="font-medium text-primary mt-0.5">Priv Escalation</div>
+</button>
+<button class="p-3 rounded border border-main bg-surface hover:border-[#10b981] text-left transition-colors" id="btn-wf-db" onclick="runCounterfactual('db')">
+<div class="text-muted text-[10px]">STAGE 6</div>
+<div class="font-medium text-primary mt-0.5">Database Access</div>
+</button>
+</div>
+</div>
+<!-- Counterfactual Output Card -->
+<div class="border border-main bg-surface p-6 rounded space-y-4 text-xs">
+<div class="flex items-center justify-between pb-3 border-b border-main">
+<div>
+<span class="text-muted text-[11px] font-mono-code block">INTERCEPTED ACTION:</span>
+<span class="text-primary font-semibold font-mono-code text-sm" id="wf-block-name">Lateral Movement (PC-25 → SRV-02)</span>
+</div>
+<span class="px-2.5 py-1 rounded bg-[#10b981]/10 text-[#10b981] font-semibold font-mono-code text-[11px]" id="wf-result-badge">
+                COLLAPSED 3 DOWNSTREAM STAGES
+              </span>
+</div>
+<div class="space-y-3">
+<div>
+<span class="text-muted block text-[11px] font-mono-code mb-1">PREVENTED STAGES:</span>
+<div class="flex flex-wrap gap-2 text-[#10b981] font-mono-code text-[11px]" id="wf-prevented-list">
+<span class="px-2 py-1 rounded bg-main border border-main">Lateral Movement</span>
+<span class="px-2 py-1 rounded bg-main border border-main">Privilege Escalation</span>
+<span class="px-2 py-1 rounded bg-main border border-main">Database Access</span>
+</div>
+</div>
+<div>
+<span class="text-muted block text-[11px] font-mono-code mb-1">DEFENSIVE FINDING:</span>
+<p class="text-primary leading-relaxed" id="wf-explanation">
+                  Blocking WinRM management port 5985 from PC-25 prevents the threat actor from reaching SRV-02. The production database host DB-01 remains completely uncompromised.
+                </p>
+</div>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 8: ATTACK REPLAY                           -->
+<!-- ============================================== -->
+<div class="hidden space-y-6 max-w-5xl" id="tab-replay">
+<div class="pb-4 border-b border-main">
+<h3 class="text-base font-semibold text-primary">Step-by-Step Attack Replay</h3>
+<p class="text-xs text-muted mt-0.5">Chronological reconstruction player stepping through each verified transition.</p>
+</div>
+<div class="border border-main bg-surface p-6 rounded space-y-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-3 font-mono-code">
+<span class="px-2 py-0.5 rounded bg-[#10b981] text-gray-950 font-bold text-xs" id="replay-step-label">Step 1 / 8</span>
+<span class="text-sm font-semibold text-primary" id="replay-stage-label">FAILED LOGIN</span>
+</div>
+<span class="text-xs font-mono-code text-muted" id="replay-event-id">AUTHENTICATION_0001</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono-code p-4 rounded bg-main border border-main">
+<div>
+<span class="text-muted block text-[11px]">TIMESTAMP:</span>
+<span class="text-primary font-medium" id="replay-time">10:00:30</span>
+</div>
+<div>
+<span class="text-muted block text-[11px]">HOST LOCATION:</span>
+<span class="text-primary font-medium" id="replay-host">PC-25</span>
+</div>
+<div>
+<span class="text-muted block text-[11px]">AUTHENTICATED USER:</span>
+<span class="text-primary font-medium" id="replay-user">rahul</span>
+</div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<button class="px-4 py-2 rounded border border-main bg-main text-xs text-muted hover:text-primary transition-colors" onclick="prevReplayStep()">
+                ← Previous
+              </button>
+<div class="flex items-center space-x-2">
+<button class="px-6 py-2 rounded bg-[#10b981] hover:bg-[#059669] text-gray-950 font-medium text-xs transition-colors" id="btn-play-pause" onclick="toggleReplayPlay()">
+                  Play ▶
+                </button>
+<button class="px-3 py-2 rounded border border-main bg-main text-xs text-muted hover:text-primary" onclick="resetReplay()">
+                  Reset
+                </button>
+</div>
+<button class="px-4 py-2 rounded border border-main bg-main text-xs text-muted hover:text-primary transition-colors" onclick="nextReplayStep()">
+                Next →
+              </button>
+</div>
+</div>
+</div>
+<!-- ============================================== -->
+<!-- TAB 9: INFRASTRUCTURE INVENTORY                -->
+<!-- ============================================== -->
+<div class="hidden space-y-6 max-w-5xl" id="tab-infra">
+<div class="pb-4 border-b border-main">
+<h3 class="text-base font-semibold text-primary">Discovered Infrastructure Inventory</h3>
+<p class="text-xs text-muted mt-0.5">Normalized inventory of 11 observed hosts and 6 discovered user accounts across the environment.</p>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono-code">
+<div class="p-3.5 border border-main bg-surface rounded">
+<span class="text-muted text-[11px] block">Observed Hosts</span>
+<span class="text-lg font-bold text-primary mt-1 block">11 hosts</span>
+</div>
+<div class="p-3.5 border border-main bg-surface rounded">
+<span class="text-muted text-[11px] block">Discovered Users</span>
+<span class="text-lg font-bold text-primary mt-1 block">6 users</span>
+</div>
+<div class="p-3.5 border border-main bg-surface rounded">
+<span class="text-muted text-[11px] block">Compromised</span>
+<span class="text-lg font-bold text-[#ef4444] mt-1 block">3 assets</span>
+</div>
+<div class="p-3.5 border border-main bg-surface rounded">
+<span class="text-muted text-[11px] block">Verified Clean</span>
+<span class="text-lg font-bold text-[#10b981] mt-1 block">8 assets</span>
+</div>
+</div>
+<!-- Tabular Host Inventory -->
+<div class="border border-main bg-surface rounded overflow-hidden">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="border-b border-main bg-main/50 font-mono-code text-[11px] text-muted">
+<th class="p-3">Host</th>
+<th class="p-3">IP Address</th>
+<th class="p-3">Role / Service</th>
+<th class="p-3">Observed User</th>
+<th class="p-3 text-right">Integrity Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-main font-mono-code text-xs">
+<tr class="hover:bg-main/30 cursor-pointer" onclick="selectHost('PC-25')">
+<td class="p-3 font-bold text-primary">PC-25</td>
+<td class="p-3 text-muted">10.0.1.25</td>
+<td class="p-3 text-primary">Workstation</td>
+<td class="p-3 text-primary">rahul</td>
+<td class="p-3 text-right text-[#ef4444] font-medium">COMPROMISED</td>
+</tr>
+<tr class="hover:bg-main/30 cursor-pointer" onclick="selectHost('SRV-02')">
+<td class="p-3 font-bold text-primary">SRV-02</td>
+<td class="p-3 text-muted">10.0.2.10</td>
+<td class="p-3 text-primary">Application Middleware</td>
+<td class="p-3 text-primary">rahul</td>
+<td class="p-3 text-right text-[#ef4444] font-medium">PIVOT HOST</td>
+</tr>
+<tr class="hover:bg-main/30 cursor-pointer" onclick="selectHost('DB-01')">
+<td class="p-3 font-bold text-[#ef4444]">DB-01</td>
+<td class="p-3 text-muted">10.0.4.15</td>
+<td class="p-3 text-primary">PostgreSQL Primary Cluster</td>
+<td class="p-3 text-primary">postgres_app</td>
+<td class="p-3 text-right text-[#ef4444] font-bold">TARGET EXPLOITED</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">DB-02</td>
+<td class="p-3 text-muted">10.0.4.16</td>
+<td class="p-3 text-muted">PostgreSQL Replica</td>
+<td class="p-3 text-muted">system</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">SRV-01</td>
+<td class="p-3 text-muted">10.0.0.5</td>
+<td class="p-3 text-muted">Active Directory DC-1</td>
+<td class="p-3 text-muted">admin</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">SRV-03</td>
+<td class="p-3 text-muted">10.0.2.15</td>
+<td class="p-3 text-muted">NFS File Gateway</td>
+<td class="p-3 text-muted">service_nfs</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">PC-01</td>
+<td class="p-3 text-muted">10.0.1.1</td>
+<td class="p-3 text-muted">IT Support Station</td>
+<td class="p-3 text-muted">admin</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">PC-07</td>
+<td class="p-3 text-muted">10.0.1.7</td>
+<td class="p-3 text-muted">Engineering Workstation</td>
+<td class="p-3 text-muted">amit</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">PC-12</td>
+<td class="p-3 text-muted">10.0.1.12</td>
+<td class="p-3 text-muted">Finance Workstation</td>
+<td class="p-3 text-muted">neha</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">PC-18</td>
+<td class="p-3 text-muted">10.0.1.18</td>
+<td class="p-3 text-muted">Operations Workstation</td>
+<td class="p-3 text-muted">priya</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+<tr class="hover:bg-main/30 opacity-70">
+<td class="p-3 text-muted">PC-31</td>
+<td class="p-3 text-muted">10.0.1.31</td>
+<td class="p-3 text-muted">HR Workstation</td>
+<td class="p-3 text-muted">sanchi</td>
+<td class="p-3 text-right text-[#10b981]">CLEAN</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+<!-- SYNCHRONIZED CONTEXTUAL EVENT INSPECTOR (RIGHT PANEL) -->
+<aside class="w-80 border-l border-main bg-surface flex flex-col justify-between shrink-0 overflow-y-auto" id="inspector-panel">
+<div class="p-5 space-y-4">
+<div class="flex items-center justify-between border-b border-main pb-3">
+<span class="text-[11px] font-mono-code uppercase tracking-wider text-muted">Event Inspector</span>
+<span class="px-2 py-0.5 rounded bg-[#10b981]/10 text-[#10b981] text-[10px] font-mono-code font-semibold" id="insp-badge">100% GROUNDED</span>
+</div>
+<div class="space-y-3 font-mono-code text-xs">
+<div>
+<span class="text-[10px] text-muted block">EVENT ID</span>
+<span class="text-primary font-bold text-sm" id="insp-id">NETWORK_0002</span>
+</div>
+<div>
+<span class="text-[10px] text-muted block">ATTACK STAGE</span>
+<span class="text-[#10b981] font-semibold" id="insp-stage">Lateral Movement</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 border-t border-main">
+<div>
+<span class="text-[10px] text-muted block">TIMESTAMP</span>
+<span class="text-primary" id="insp-time">10:09:20</span>
+</div>
+<div>
+<span class="text-[10px] text-muted block">USER IDENTITY</span>
+<span class="text-primary" id="insp-user">rahul</span>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1 border-t border-main">
+<div>
+<span class="text-[10px] text-muted block">SOURCE</span>
+<span class="text-primary" id="insp-src">PC-25</span>
+</div>
+<div>
+<span class="text-[10px] text-muted block">DESTINATION</span>
+<span class="text-primary" id="insp-dst">SRV-02</span>
+</div>
+</div>
+<!-- Context Narrative -->
+<div class="pt-2 border-t border-main font-sans">
+<span class="text-[10px] font-mono-code text-muted block mb-1">EVIDENCE CONTEXT</span>
+<p class="text-xs text-muted leading-relaxed" id="insp-context">
+                The attacker moved from PC-25 to SRV-02 using credentials dumped from memory via an authenticated WinRM channel.
+              </p>
+</div>
+<!-- Supporting Evidence IDs -->
+<div class="pt-2 border-t border-main">
+<span class="text-[10px] text-muted block mb-1">CORRELATED SUPPORTING LOGS</span>
+<div class="flex flex-wrap gap-2 text-xs text-[#10b981]" id="insp-supporting">
+<button class="underline" onclick="inspectRawEvent('NETWORK_0001')">NETWORK_0001</button>
+<button class="underline" onclick="inspectRawEvent('ENDPOINT_0002')">ENDPOINT_0002</button>
+</div>
+</div>
+<!-- Progressive Disclosure: Raw Technical Details -->
+<div class="pt-2 border-t border-main">
+<button class="w-full text-left flex items-center justify-between text-xs text-muted hover:text-primary transition-colors" onclick="toggleTechnicalDetails()">
+<span>Technical Telemetry</span>
+<span id="tech-toggle-icon">↓</span>
+</button>
+<div class="hidden mt-2 p-2.5 rounded bg-main border border-main text-[11px] space-y-1 text-muted" id="insp-tech-details">
+<div>Port: <span class="text-primary">5985 (WinRM / HTTP)</span></div>
+<div>Hash: <span class="text-primary">e3b0c44298fc1c149afb</span></div>
+<div>Source Row: <span class="text-primary">network_logs.csv:Row 41</span></div>
+<div>Causal Delta: <span class="text-[#10b981]">Δt = 190s after LSASS read</span></div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-main font-mono-code text-xs flex items-center justify-between">
+<span class="text-muted text-[11px]">Integrity: Verified</span>
+<button class="text-[#10b981] hover:underline text-xs" onclick="askAIAboutSelectedEvent()">
+            Ask AI about this →
+          </button>
+</div>
+</aside>
+</div>
+</section>
+<!-- ========================================================================= -->
+<!-- JAVASCRIPT: DATA STORE, ROUTING, THEMES, AND CONTROLS -->
+<!-- ========================================================================= -->
+<script>
+    // -------------------------------------------------------------------------
+    // Incident Data Model (809 raw events normalized into 8 sequential events)
+    // -------------------------------------------------------------------------
+    const incidentEvents = [
+      {
+        index: 1,
+        id: "AUTHENTICATION_0001",
+        stage: "Failed Login",
+        time: "10:00:30",
+        user: "rahul",
+        host: "PC-25",
+        dest: "PC-25",
+        severity: "LOW",
+        dotColor: "#9ca3af",
+        status: "VERIFIED",
+        context: "Initial failed interactive logon attempt observed on workstation PC-25 with bad password entry.",
+        supporting: ["AUTH_ROW_012"],
+        port: "3389",
+        hash: "-"
+      },
+      {
+        index: 2,
+        id: "AUTHENTICATION_0002",
+        stage: "Successful Login",
+        time: "10:01:10",
+        user: "rahul",
+        host: "PC-25",
+        dest: "PC-25",
+        severity: "LOW",
+        dotColor: "#3b82f6",
+        status: "VERIFIED",
+        context: "Successful interactive logon 40 seconds later, acquiring initial workstation foothold.",
+        supporting: ["AUTHENTICATION_0001"],
+        port: "3389",
+        hash: "explorer.exe"
+      },
+      {
+        index: 3,
+        id: "ENDPOINT_0001",
+        stage: "Process Execution",
+        time: "10:02:20",
+        user: "rahul",
+        host: "PC-25",
+        dest: "PC-25",
+        severity: "MEDIUM",
+        dotColor: "#f59e0b",
+        status: "VERIFIED",
+        context: "Administrative CLI discovery utility invoked via cmd.exe querying domain membership.",
+        supporting: ["AUTHENTICATION_0002"],
+        port: "-",
+        hash: "7f83b1657ff1fc53b"
+      },
+      {
+        index: 4,
+        id: "ENDPOINT_0002",
+        stage: "Credential Access",
+        time: "10:06:10",
+        user: "rahul",
+        host: "PC-25",
+        dest: "PC-25",
+        severity: "HIGH",
+        dotColor: "#ef4444",
+        status: "VERIFIED",
+        context: "Memory reading access against local security authority subsystem to extract cached tokens.",
+        supporting: ["ENDPOINT_0001"],
+        port: "-",
+        hash: "lsass_dump.raw"
+      },
+      {
+        index: 5,
+        id: "NETWORK_0002",
+        stage: "Lateral Movement",
+        time: "10:09:20",
+        user: "rahul",
+        host: "PC-25 → SRV-02",
+        dest: "SRV-02",
+        srcHost: "PC-25",
+        severity: "HIGH",
+        dotColor: "#10b981",
+        status: "VERIFIED",
+        context: "The attacker moves from PC-25 to SRV-02 using recovered credentials via remote execution channel.",
+        supporting: ["NETWORK_0001", "ENDPOINT_0002"],
+        port: "5985 (WinRM)",
+        hash: "wsmprovhost.exe"
+      },
+      {
+        index: 6,
+        id: "ENDPOINT_0003",
+        stage: "Privilege Escalation",
+        time: "10:12:10",
+        user: "rahul",
+        host: "SRV-02",
+        dest: "SRV-02",
+        severity: "CRITICAL",
+        dotColor: "#ef4444",
+        status: "VERIFIED",
+        context: "Elevated group token assigned on application server SRV-02 granting local database proxy privileges.",
+        supporting: ["NETWORK_0002"],
+        port: "-",
+        hash: "DB_ADMIN_PRIV"
+      },
+      {
+        index: 7,
+        id: "NETWORK_0006",
+        stage: "Database Connection",
+        time: "10:14:30",
+        user: "rahul",
+        host: "SRV-02 → DB-01",
+        dest: "DB-01",
+        srcHost: "SRV-02",
+        severity: "HIGH",
+        dotColor: "#f59e0b",
+        status: "VERIFIED",
+        context: "Internal database session initialized from middleware SRV-02 to production database DB-01.",
+        supporting: ["ENDPOINT_0003"],
+        port: "5432 (PostgreSQL)",
+        hash: "-"
+      },
+      {
+        index: 8,
+        id: "APPLICATION_0004",
+        stage: "Database Access",
+        time: "10:15:10",
+        user: "rahul",
+        host: "DB-01",
+        dest: "DB-01",
+        severity: "CRITICAL",
+        dotColor: "#ef4444",
+        status: "VERIFIED",
+        context: "Direct SELECT statement executed against accounts table containing sensitive records.",
+        supporting: ["NETWORK_0006"],
+        port: "5432",
+        hash: "SELECT * FROM public.accounts"
+      }
+    ];
+
+    // State Variables
+    let activeEvent = incidentEvents[4]; // Default to NETWORK_0002 Lateral Movement
+    let currentReplayIndex = 0;
+    let replayInterval = null;
+    let isSidebarCollapsed = false;
+    const uploadedSources = { auth: false, endpoint: false, network: false, app: false };
+
+    // -------------------------------------------------------------------------
+    // Dual Theme Toggle (localStorage persisted)
+    // -------------------------------------------------------------------------
+    function initTheme() {
+      const savedTheme = localStorage.getItem('argus_theme') || 'dark';
+      applyTheme(savedTheme);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const newTheme = isDark ? 'light' : 'dark';
+      applyTheme(newTheme);
+      localStorage.setItem('argus_theme', newTheme);
+    }
+
+    function applyTheme(theme) {
+      const root = document.documentElement;
+      const toggleIcon = document.getElementById('theme-toggle-icon');
+      const toggleText = document.getElementById('theme-toggle-text');
+
+      if (theme === 'light') {
+        root.classList.remove('dark');
+        root.classList.add('light');
+        if (toggleIcon) toggleIcon.innerText = 'dark_mode';
+        if (toggleText) toggleText.innerText = 'Dark';
+      } else {
+        root.classList.remove('light');
+        root.classList.add('dark');
+        if (toggleIcon) toggleIcon.innerText = 'light_mode';
+        if (toggleText) toggleText.innerText = 'Light';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // View Switching & Routing
+    // -------------------------------------------------------------------------
+    function switchView(viewId) {
+      document.getElementById('view-landing').classList.add('hidden');
+      document.getElementById('view-new-investigation').classList.add('hidden');
+      document.getElementById('view-analysis').classList.add('hidden');
+      document.getElementById('view-dashboard').classList.add('hidden');
+
+      if (viewId === 'landing') {
+        document.getElementById('view-landing').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      } else if (viewId === 'new-investigation') {
+        document.getElementById('view-new-investigation').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      } else if (viewId === 'dashboard') {
+        document.getElementById('view-dashboard').classList.remove('hidden');
+        renderOverviewList();
+        renderTimelineFlow();
+        updateInspector(activeEvent);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Real File Upload & Authentic Selection States
+    // -------------------------------------------------------------------------
+    function handleFileSelected(e, sourceKey) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const lines = evt.target.result.split('\n').filter(l => l.trim().length > 0);
+        const count = Math.max(1, lines.length - 1);
+
+        uploadedSources[sourceKey] = true;
+        const statusEl = document.getElementById(`status-${sourceKey}`);
+        const detailEl = document.getElementById(`detail-${sourceKey}`);
+
+        if (statusEl) {
+          statusEl.innerText = "Loaded";
+          statusEl.classList.remove('text-muted');
+          statusEl.classList.add('text-[#10b981]');
+        }
+        if (detailEl) {
+          detailEl.innerText = `✓ ${sourceKey.toUpperCase()} - ${file.name} (${count} events)`;
+          detailEl.classList.remove('hidden');
+        }
+        checkTelemetryStatus();
+      };
+      reader.readAsText(file);
+    }
+
+    function loadDemoIncident() {
+      uploadedSources.auth = true;
+      uploadedSources.endpoint = true;
+      uploadedSources.network = true;
+      uploadedSources.app = true;
+
+      const demoFiles = [
+        { key: 'auth', label: 'AUTHENTICATION', file: 'authentication_logs.csv', count: 232 },
+        { key: 'endpoint', label: 'ENDPOINT', file: 'endpoint_logs.csv', count: 223 },
+        { key: 'network', label: 'NETWORK', file: 'network_logs.csv', count: 203 },
+        { key: 'app', label: 'APPLICATION', file: 'application_logs.csv', count: 151 }
+      ];
+
+      demoFiles.forEach(d => {
+        const statusEl = document.getElementById(`status-${d.key}`);
+        const detailEl = document.getElementById(`detail-${d.key}`);
+        if (statusEl) {
+          statusEl.innerText = "Loaded";
+          statusEl.classList.remove('text-muted');
+          statusEl.classList.add('text-[#10b981]');
+        }
+        if (detailEl) {
+          detailEl.innerText = `✓ ${d.label} - ${d.file} (${d.count} events)`;
+          detailEl.classList.remove('hidden');
+        }
+      });
+
+      const badge = document.getElementById('demo-loaded-badge');
+      if (badge) badge.classList.remove('hidden');
+
+      checkTelemetryStatus();
+      // Instantly start SOC analysis
+      startAnalysis();
+    }
+
+    function checkTelemetryStatus() {
+      const readyCount = Object.values(uploadedSources).filter(Boolean).length;
+      const countEl = document.getElementById('source-ready-count');
+      const btn = document.getElementById('btn-analyze-telemetry');
+
+      if (countEl) countEl.innerText = `${readyCount} / 4 sources ready`;
+
+      if (readyCount >= 4) {
+        btn.disabled = false;
+        btn.classList.remove('cursor-not-allowed', 'text-muted');
+        btn.classList.add('bg-[#10b981]', 'text-gray-950', 'hover:bg-[#059669]', 'cursor-pointer');
+        document.getElementById('upload-instruction').innerText = "All 4 sources loaded. Ready to run reconstruction engine.";
+        document.getElementById('upload-instruction').classList.add('text-[#10b981]');
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Streamlined Dignified SOC Analysis Animation
+    // -------------------------------------------------------------------------
+    function startAnalysis() {
+      const modal = document.getElementById('view-analysis');
+      modal.classList.remove('hidden');
+
+      const progressBar = document.getElementById('soc-progress-bar');
+      const subtext = document.getElementById('soc-subtext');
+      const statusText = document.getElementById('soc-status-text');
+      const engineState = document.getElementById('soc-engine-state');
+
+      const phases = [
+        { pct: '30%', text: 'Reading telemetry across 4 feeds...', state: 'READING' },
+        { pct: '55%', text: 'Normalizing timestamps and user identities...', state: 'NORMALIZING' },
+        { pct: '80%', text: 'Correlating cross-tier causal links...', state: 'CORRELATING' },
+        { pct: '95%', text: 'Verifying evidence & blast radius...', state: 'VERIFYING' },
+        { pct: '100%', text: 'Analysis complete ✓', state: 'COMPLETE' }
+      ];
+
+      let step = 0;
+      const interval = setInterval(() => {
+        if (step < phases.length) {
+          progressBar.style.width = phases[step].pct;
+          subtext.innerText = phases[step].text;
+          statusText.innerText = phases[step].state;
+          engineState.innerText = phases[step].state;
+          step++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            modal.classList.add('hidden');
+            switchView('dashboard');
+          }, 350);
+        }
+      }, 300);
+    }
+
+    // -------------------------------------------------------------------------
+    // Sidebar Collapsible Logic
+    // -------------------------------------------------------------------------
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar-nav');
+      const labels = document.querySelectorAll('.sidebar-label');
+      const title = document.getElementById('sidebar-nav-title');
+      const footer = document.getElementById('sidebar-footer-stats');
+      const icon = document.getElementById('sidebar-collapse-icon');
+
+      isSidebarCollapsed = !isSidebarCollapsed;
+
+      if (isSidebarCollapsed) {
+        sidebar.classList.remove('w-56');
+        sidebar.classList.add('w-14');
+        labels.forEach(l => l.classList.add('hidden'));
+        if (title) title.classList.add('hidden');
+        if (footer) footer.classList.add('hidden');
+        if (icon) icon.innerText = 'last_page';
+      } else {
+        sidebar.classList.remove('w-14');
+        sidebar.classList.add('w-56');
+        labels.forEach(l => l.classList.remove('hidden'));
+        if (title) title.classList.remove('hidden');
+        if (footer) footer.classList.remove('hidden');
+        if (icon) icon.innerText = 'first_page';
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Dashboard Tabs Navigation
+    // -------------------------------------------------------------------------
+    function setDashboardTab(tabId) {
+      const tabs = ['overview', 'timeline', 'graph', 'evidence', 'impact', 'ai', 'whatif', 'replay', 'infra'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        const navEl = document.getElementById(`nav-${t}`);
+        if (el) el.classList.add('hidden');
+        if (navEl) {
+          navEl.classList.remove('bg-main', 'text-primary', 'font-medium');
+          navEl.classList.add('text-muted');
+        }
+      });
+
+      const targetTab = document.getElementById(`tab-${tabId}`);
+      const targetNav = document.getElementById(`nav-${tabId}`);
+      if (targetTab) targetTab.classList.remove('hidden');
+      if (targetNav) {
+        targetNav.classList.add('bg-main', 'text-primary', 'font-medium');
+        targetNav.classList.remove('text-muted');
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Rendering Overview Sequence List (Hairline, not boxed cards)
+    // -------------------------------------------------------------------------
+    function renderOverviewList() {
+      const container = document.getElementById('overview-event-list');
+      if (!container) return;
+
+      container.innerHTML = incidentEvents.map(ev => {
+        const isSelected = activeEvent && activeEvent.id === ev.id;
+        const bgClass = isSelected ? 'bg-surface font-medium' : 'hover:bg-surface/50';
+
+        return `
+          <div onclick="selectEvent('${ev.id}')" class="py-3 px-2 flex items-center justify-between cursor-pointer text-xs transition-colors ${bgClass}">
+            <div class="flex items-center space-x-4">
+              <span class="font-mono-code text-muted text-[11px] w-6">0${ev.index}</span>
+              <span class="text-primary font-medium">${ev.stage}</span>
+              <span class="font-mono-code text-muted text-[11px] hidden sm:inline">${ev.time}</span>
+            </div>
+            <div class="flex items-center space-x-6">
+              <span class="font-mono-code text-primary text-[11px]">${ev.host}</span>
+              <span class="font-mono-code text-muted text-[11px]">${ev.id}</span>
+              <span class="text-[10px] font-mono-code ${ev.severity === 'CRITICAL' ? 'text-[#ef4444]' : ev.severity === 'HIGH' ? 'text-[#f59e0b]' : 'text-muted'}">${ev.severity}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // Rendering Timeline Tab Flow (Status dots: green/amber/red/blue)
+    // -------------------------------------------------------------------------
+    function renderTimelineFlow() {
+      const container = document.getElementById('timeline-vflow');
+      if (!container) return;
+
+      container.innerHTML = incidentEvents.map(ev => {
+        const isSelected = activeEvent && activeEvent.id === ev.id;
+        return `
+          <div onclick="selectEvent('${ev.id}')" class="flex items-start space-x-4 cursor-pointer group">
+            <div class="w-6 flex justify-center pt-1 z-10">
+              <span class="w-3 h-3 rounded-full border-2 border-main" style="background-color: ${ev.dotColor}"></span>
+            </div>
+            <div class="flex-1 pb-4 border-b border-main">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-primary group-hover:text-[#10b981] transition-colors">${ev.stage}</span>
+                <span class="font-mono-code text-muted text-[11px]">${ev.time}</span>
+              </div>
+              <div class="text-xs text-muted mt-1 leading-relaxed">${ev.context}</div>
+              <div class="flex items-center space-x-4 mt-2 font-mono-code text-[11px] text-muted">
+                <span>Host: <span class="text-primary">${ev.host}</span></span>
+                <span>User: <span class="text-primary">${ev.user}</span></span>
+                <span class="text-[#10b981] underline">${ev.id}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // Event Selection & Inspector Synchronization
+    // -------------------------------------------------------------------------
+    function selectEvent(eventId) {
+      const ev = incidentEvents.find(e => e.id === eventId);
+      if (!ev) return;
+      activeEvent = ev;
+      renderOverviewList();
+      updateInspector(ev);
+    }
+
+    function selectHost(hostName) {
+      const ev = incidentEvents.find(e => e.host.includes(hostName) || e.dest === hostName);
+      if (ev) selectEvent(ev.id);
+    }
+
+    function selectEdge(eventId) {
+      selectEvent(eventId);
+      const explanation = document.getElementById('graph-connection-explanation');
+      if (explanation) {
+        if (eventId === 'NETWORK_0002') {
+          explanation.innerHTML = `
+            <div class="space-y-1">
+              <div class="font-semibold text-primary font-mono-code">Why this connection? [NETWORK_0002 : PC-25 → SRV-02]</div>
+              <div>Causal transition: Ingested telemetry confirms WinRM command execution onto SRV-02 190s after LSASS token dumping on PC-25.</div>
+              <div class="text-[#10b981] font-mono-code">Causality confidence: 100% (Grounded by NETWORK_0001 & ENDPOINT_0002)</div>
+            </div>
+          `;
+        } else if (eventId === 'NETWORK_0006') {
+          explanation.innerHTML = `
+            <div class="space-y-1">
+              <div class="font-semibold text-primary font-mono-code">Why this connection? [NETWORK_0006 : SRV-02 → DB-01]</div>
+              <div>Causal transition: Elevated local role on SRV-02 enabled direct socket initiation to PostgreSQL port 5432 on DB-01.</div>
+              <div class="text-[#10b981] font-mono-code">Causality confidence: 100% (Grounded by ENDPOINT_0003 & APPLICATION_0004)</div>
+            </div>
+          `;
+        }
+      }
+    }
+
+    function updateInspector(ev) {
+      document.getElementById('insp-id').innerText = ev.id;
+      document.getElementById('insp-stage').innerText = ev.stage;
+      document.getElementById('insp-time').innerText = ev.time;
+      document.getElementById('insp-user').innerText = ev.user;
+      document.getElementById('insp-src').innerText = ev.srcHost || ev.host;
+      document.getElementById('insp-dst').innerText = ev.dest;
+      document.getElementById('insp-context').innerText = ev.context;
+
+      const suppContainer = document.getElementById('insp-supporting');
+      if (suppContainer) {
+        suppContainer.innerHTML = ev.supporting.map(s => 
+          `<button onclick="inspectRawEvent('${s}')" class="underline hover:text-primary transition-colors">${s}</button>`
+        ).join(', ');
+      }
+    }
+
+    function inspectRawEvent(refId) {
+      const found = incidentEvents.find(e => e.id === refId);
+      if (found) selectEvent(found.id);
+    }
+
+    function toggleTechnicalDetails() {
+      const el = document.getElementById('insp-tech-details');
+      const icon = document.getElementById('tech-toggle-icon');
+      if (el.classList.contains('hidden')) {
+        el.classList.remove('hidden');
+        icon.innerText = '↑';
+      } else {
+        el.classList.add('hidden');
+        icon.innerText = '↓';
+      }
+    }
+
+    function askAIAboutSelectedEvent() {
+      setDashboardTab('ai');
+      const input = document.getElementById('ai-input');
+      if (input) {
+        input.value = `What evidence connects to ${activeEvent.id} (${activeEvent.stage})?`;
+        submitAIQuery();
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // AI Investigator Logic
+    // -------------------------------------------------------------------------
+    function askPresetAI(q) {
+      document.getElementById('ai-input').value = q;
+      submitAIQuery();
+    }
+
+    function submitAIQuery() {
+      const q = document.getElementById('ai-input').value.trim();
+      if (!q) return;
+
+      document.getElementById('ai-display-q').innerText = q;
+      const lower = q.toLowerCase();
+
+      let ans = "";
+      let ev = [];
+      let conf = "100% Grounded";
+
+      if (lower.includes("db-01") || lower.includes("reach")) {
+        ans = "The attacker moved from PC-25 to SRV-02 via WinRM port 5985 and subsequently established a database connection to DB-01 on PostgreSQL port 5432.";
+        ev = ["NETWORK_0002", "NETWORK_0006", "APPLICATION_0004"];
+      } else if (lower.includes("lateral") || lower.includes("evidence")) {
+        ans = "Lateral movement is supported by remote WinRM session traffic between PC-25 and SRV-02, preceded directly by LSASS memory dumping on workstation PC-25.";
+        ev = ["NETWORK_0001", "ENDPOINT_0002", "NETWORK_0002"];
+      } else if (lower.includes("stop") || lower.includes("stopped") || lower.includes("where")) {
+        ans = "The intrusion could have been completely contained at Lateral Movement (Stage 4) by restricting workstation WinRM remote access to SRV-02.";
+        ev = ["NETWORK_0002", "ENDPOINT_0003"];
+      } else {
+        ans = `Correlated telemetry for "${q}": All observed lateral activity traces linearly from PC-25 to SRV-02 to target asset DB-01 under identity rahul.`;
+        ev = [activeEvent.id];
+      }
+
+      document.getElementById('ai-display-a').innerText = ans;
+      document.getElementById('ai-display-conf').innerText = conf;
+      document.getElementById('ai-display-ev').innerHTML = ev.map(id => 
+        `<button onclick="inspectRawEvent('${id}')" class="underline mr-2">${id}</button>`
+      ).join('');
+    }
+
+    // -------------------------------------------------------------------------
+    // Counterfactual Simulation
+    // -------------------------------------------------------------------------
+    function runCounterfactual(stageKey) {
+      const stages = ['initial', 'exec', 'cred', 'lateral', 'priv', 'db'];
+      stages.forEach(s => {
+        const btn = document.getElementById(`btn-wf-${s}`);
+        if (btn) {
+          btn.classList.remove('border-[#10b981]', 'bg-main');
+          btn.classList.add('border-main', 'bg-surface');
+        }
+      });
+
+      const activeBtn = document.getElementById(`btn-wf-${stageKey}`);
+      if (activeBtn) {
+        activeBtn.classList.add('border-[#10b981]', 'bg-main');
+        activeBtn.classList.remove('border-main', 'bg-surface');
+      }
+
+      const blockLabel = document.getElementById('wf-block-name');
+      const badge = document.getElementById('wf-result-badge');
+      const list = document.getElementById('wf-prevented-list');
+      const exp = document.getElementById('wf-explanation');
+
+      if (stageKey === 'lateral') {
+        blockLabel.innerText = "Lateral Movement (PC-25 → SRV-02)";
+        badge.innerText = "COLLAPSED 3 DOWNSTREAM STAGES";
+        list.innerHTML = `
+          <span class="px-2 py-1 rounded bg-main border border-main">Lateral Movement</span>
+          <span class="px-2 py-1 rounded bg-main border border-main">Privilege Escalation</span>
+          <span class="px-2 py-1 rounded bg-main border border-main">Database Access</span>
+        `;
+        exp.innerText = "Blocking WinRM management port 5985 from PC-25 prevents the threat actor from reaching SRV-02. The production database host DB-01 remains completely uncompromised.";
+      } else if (stageKey === 'initial') {
+        blockLabel.innerText = "Initial Access (Workstation Login)";
+        badge.innerText = "ALL 7 SUBSEQUENT STAGES PREVENTED";
+        list.innerHTML = `<span class="px-2 py-1 rounded bg-main border border-main">Entire Intrusion Chain Prevented</span>`;
+        exp.innerText = "Enforcing hardware MFA at interactive logon on PC-25 prevents the attacker from gaining initial workstation foothold.";
+      } else if (stageKey === 'cred') {
+        blockLabel.innerText = "Credential Access (LSASS Protection)";
+        badge.innerText = "COLLAPSED 4 DOWNSTREAM STAGES";
+        list.innerHTML = `
+          <span class="px-2 py-1 rounded bg-main border border-main">Lateral Movement</span>
+          <span class="px-2 py-1 rounded bg-main border border-main">Database Access</span>
+        `;
+        exp.innerText = "Enforcing Credential Guard on PC-25 prevents the memory dump, depriving the actor of tokens needed to pivot to SRV-02.";
+      } else {
+        blockLabel.innerText = "Privilege Escalation on SRV-02";
+        badge.innerText = "COLLAPSED 2 DOWNSTREAM STAGES";
+        list.innerHTML = `
+          <span class="px-2 py-1 rounded bg-main border border-main">Database Connection</span>
+          <span class="px-2 py-1 rounded bg-main border border-main">Database Access</span>
+        `;
+        exp.innerText = "Restricting database proxy privileges on SRV-02 prevents the actor from issuing queries to DB-01.";
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // Attack Replay Player
+    // -------------------------------------------------------------------------
+    function updateReplayUI() {
+      const ev = incidentEvents[currentReplayIndex];
+      document.getElementById('replay-step-label').innerText = `Step ${ev.index} / 8`;
+      document.getElementById('replay-stage-label').innerText = ev.stage.toUpperCase();
+      document.getElementById('replay-event-id').innerText = ev.id;
+      document.getElementById('replay-time').innerText = ev.time;
+      document.getElementById('replay-host').innerText = ev.host;
+      document.getElementById('replay-user').innerText = ev.user;
+
+      selectEvent(ev.id);
+    }
+
+    function nextReplayStep() {
+      if (currentReplayIndex < incidentEvents.length - 1) {
+        currentReplayIndex++;
+        updateReplayUI();
+      }
+    }
+
+    function prevReplayStep() {
+      if (currentReplayIndex > 0) {
+        currentReplayIndex--;
+        updateReplayUI();
+      }
+    }
+
+    function resetReplay() {
+      currentReplayIndex = 0;
+      updateReplayUI();
+      if (replayInterval) clearInterval(replayInterval);
+      document.getElementById('btn-play-pause').innerText = "Play ▶";
+    }
+
+    function toggleReplayPlay() {
+      const btn = document.getElementById('btn-play-pause');
+      if (replayInterval) {
+        clearInterval(replayInterval);
+        replayInterval = null;
+        btn.innerText = "Play ▶";
+      } else {
+        btn.innerText = "Pause ❚❚";
+        replayInterval = setInterval(() => {
+          if (currentReplayIndex < incidentEvents.length - 1) {
+            currentReplayIndex++;
+            updateReplayUI();
+          } else {
+            clearInterval(replayInterval);
+            replayInterval = null;
+            btn.innerText = "Play ▶";
+          }
+        }, 1100);
+      }
+    }
+
+    // Initialize application on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      renderOverviewList();
+    });
+  </script>
+</body></html>
