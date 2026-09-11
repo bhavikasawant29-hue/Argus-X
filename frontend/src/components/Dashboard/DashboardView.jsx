@@ -51,13 +51,30 @@ export default function DashboardView({ investigationData }) {
       case 'timeline':
         return <TimelineTab timeline={timeline} selectedEvent={selectedEvent} onSelectEvent={setSelectedEvent} />;
       case 'graph':
-        return <GraphTab graph={graph} timeline={timeline} selectedEvent={selectedEvent} onSelectEvent={setSelectedEvent} />;
+        return (
+          <GraphTab
+            graph={graph}
+            timeline={timeline}
+            selectedEvent={selectedEvent}
+            onSelectEvent={setSelectedEvent}
+            infrastructure={infrastructure}
+            blastRadius={blastRadius}
+          />
+        );
       case 'evidence':
         return <EvidenceTab evidence={evidence} timeline={timeline} onInspectRawEvent={handleInspectRawEvent} />;
       case 'gaps':
         return <GapsTab gaps={gaps} recommendations={recommendations} />;
       case 'impact':
-        return <ImpactTab blastRadius={blastRadius} />;
+        return (
+          <ImpactTab
+            blastRadius={blastRadius}
+            timeline={timeline}
+            selectedEvent={selectedEvent}
+            onSelectEvent={setSelectedEvent}
+            infrastructure={infrastructure}
+          />
+        );
       case 'ai':
         return (
           <AIInvestigatorTab
