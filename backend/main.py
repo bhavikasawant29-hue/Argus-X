@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 from typing import Optional, Dict, Any
 
-# Ensure backend root directory is in Python path for module imports
 backend_dir = Path(__file__).resolve().parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
@@ -24,25 +23,24 @@ from engine.counterfactual import simulate_counterfactual
 from engine.investigator import investigate
 from engine.replay import build_attack_replay
 
-
 app = FastAPI(
     title="ARGUS-X Security Telemetry Analysis API",
     description="Evidence-Driven Security Telemetry Correlation & Attack Reconstruction Engine",
     version="2.4.0"
 )
 
-# Restrict CORS to local frontend development origins
+# Allow local frontend and deployed Vercel frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "https://argusx-one.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 EXPECTED_STAGES = [
     "Initial Access",
@@ -127,21 +125,30 @@ async def analyze_uploaded_telemetry(
     for source_type, file_obj in files.items():
         if file_obj is not None and file_obj.filename:
             provided_count += 1
+
             try:
                 content = await file_obj.read()
+
                 if content and len(content.strip()) > 0:
                     events = load_csv_from_bytes(content, source_type)
                     parsed_events.extend(events)
+
             except Exception as err:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Failed to parse {source_type} CSV log file '{file_obj.filename}': {str(err)}"
+                    detail=(
+                        f"Failed to parse {source_type} CSV log file "
+                        f"'{file_obj.filename}': {str(err)}"
+                    )
                 )
 
     if provided_count == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No telemetry CSV files provided. Please upload at least one valid log file."
+            detail=(
+                "No telemetry CSV files provided. "
+                "Please upload at least one valid log file."
+            )
         )
 
     if not parsed_events:
@@ -150,11 +157,11 @@ async def analyze_uploaded_telemetry(
             detail="Uploaded telemetry files contained no valid or parseable events."
         )
 
-    # Sort events chronologically by timestamp
     parsed_events.sort(key=lambda event: event.timestamp or "")
 
     try:
         return run_full_analysis(parsed_events)
+
     except Exception as err:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -170,6 +177,7 @@ class InvestigateRequest(BaseModel):
 
 @app.post("/api/investigate")
 def run_investigation(req: InvestigateRequest):
+
     if not req.question or not req.question.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -182,15 +190,24 @@ def run_investigation(req: InvestigateRequest):
             evidence = req.context.get("evidence", [])
             gaps = req.context.get("gaps", [])
             blast_radius = req.context.get("blast_radius", {})
+
         else:
             events = load_all_events()
             analysis = run_full_analysis(events)
+
             timeline = analysis["timeline"]
             evidence = analysis["evidence"]
             gaps = analysis["gaps"]
             blast_radius = analysis["blast_radius"]
 
-        return investigate(req.question, timeline, evidence, gaps, blast_radius)
+        return investigate(
+            req.question,
+            timeline,
+            evidence,
+            gaps,
+            blast_radius
+        )
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -204,6 +221,7 @@ class CounterfactualRequest(BaseModel):
 
 @app.post("/api/counterfactual")
 def run_counterfactual_simulation(req: CounterfactualRequest):
+
     if not req.blocked_stage:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -213,7 +231,12 @@ def run_counterfactual_simulation(req: CounterfactualRequest):
     try:
         events = load_all_events()
         timeline = reconstruct_attack(events)
-        return simulate_counterfactual(timeline, req.blocked_stage)
+
+        return simulate_counterfactual(
+            timeline,
+            req.blocked_stage
+        )
+
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
