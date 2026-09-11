@@ -8,6 +8,7 @@ from engine.graph import build_attack_graph
 from engine.blast_radius import calculate_blast_radius
 from engine.infrastructure import build_infrastructure_map
 from engine.recommendations import generate_telemetry_recommendations
+from engine.counterfactual import simulate_counterfactual
 
 
 events = load_all_events()
@@ -55,6 +56,11 @@ blast_radius = calculate_blast_radius(
 infrastructure = build_infrastructure_map(
     timeline,
     events
+)
+
+counterfactual = simulate_counterfactual(
+    timeline,
+    "Lateral Movement"
 )
 
 
@@ -206,3 +212,26 @@ for connection in infrastructure["connections"]:
         "|",
         connection["event_id"]
     )
+
+
+print("\nCounterfactual Simulation:")
+
+print(
+    "Blocked Stage:",
+    counterfactual["blocked_stage"]
+)
+
+print(
+    "Attack Stopped:",
+    counterfactual["stopped"]
+)
+
+print(
+    "Prevented Stages:",
+    counterfactual["prevented_stages"]
+)
+
+print(
+    "Impact:",
+    counterfactual["impact"]
+)
