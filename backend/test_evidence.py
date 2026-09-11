@@ -6,6 +6,7 @@ from engine.scoring import calculate_completeness
 from engine.gaps import find_evidence_gaps
 from engine.graph import build_attack_graph
 from engine.blast_radius import calculate_blast_radius
+from engine.infrastructure import build_infrastructure_map
 
 
 events = load_all_events()
@@ -40,7 +41,14 @@ gaps = find_evidence_gaps(
 
 graph = build_attack_graph(timeline)
 
-blast_radius = calculate_blast_radius(timeline)
+blast_radius = calculate_blast_radius(
+    timeline
+)
+
+infrastructure = build_infrastructure_map(
+    timeline,
+    events
+)
 
 
 print("Attack events:", len(timeline))
@@ -76,8 +84,15 @@ for gap in gaps:
 
 print("\nAttack Graph:")
 
-print("Nodes:", len(graph["nodes"]))
-print("Edges:", len(graph["edges"]))
+print(
+    "Nodes:",
+    len(graph["nodes"])
+)
+
+print(
+    "Edges:",
+    len(graph["edges"])
+)
 
 for edge in graph["edges"]:
     print(
@@ -125,3 +140,50 @@ print("Attack Path:")
 
 for path in blast_radius["attack_path"]:
     print(path)
+
+
+print("\nAttack Infrastructure:")
+
+print(
+    "Hosts:",
+    infrastructure["hosts"]
+)
+
+print(
+    "Users:",
+    infrastructure["users"]
+)
+
+print(
+    "Source IPs:",
+    infrastructure["source_ips"]
+)
+
+print(
+    "Host Count:",
+    infrastructure["host_count"]
+)
+
+print(
+    "User Count:",
+    infrastructure["user_count"]
+)
+
+print(
+    "IP Count:",
+    infrastructure["ip_count"]
+)
+
+print(
+    "Connections:",
+    infrastructure["connection_count"]
+)
+
+for connection in infrastructure["connections"]:
+    print(
+        connection["source"],
+        "->",
+        connection["destination"],
+        "|",
+        connection["event_id"]
+    )
