@@ -5,3 +5,4 @@ pandas
 networkx
 python-multipart
 openai
+python-dotenv
