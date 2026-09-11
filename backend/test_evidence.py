@@ -5,6 +5,7 @@ from engine.scoring import calculate_confidence
 from engine.scoring import calculate_completeness
 from engine.gaps import find_evidence_gaps
 from engine.graph import build_attack_graph
+from engine.blast_radius import calculate_blast_radius
 
 
 events = load_all_events()
@@ -39,10 +40,13 @@ gaps = find_evidence_gaps(
 
 graph = build_attack_graph(timeline)
 
+blast_radius = calculate_blast_radius(timeline)
+
 
 print("Attack events:", len(timeline))
 print("Confidence:", confidence)
 print("Completeness:", completeness)
+
 
 print("\nEvidence:")
 
@@ -57,6 +61,7 @@ for item in evidence:
         item["supporting_events"]
     )
 
+
 print("\nEvidence Gaps:")
 
 for gap in gaps:
@@ -67,6 +72,7 @@ for gap in gaps:
         "|",
         gap["impact"]
     )
+
 
 print("\nAttack Graph:")
 
@@ -81,3 +87,41 @@ for edge in graph["edges"]:
         "|",
         edge["relationship"]
     )
+
+
+print("\nBlast Radius:")
+
+print(
+    "Affected Hosts:",
+    blast_radius["affected_hosts"]
+)
+
+print(
+    "Affected Users:",
+    blast_radius["affected_users"]
+)
+
+print(
+    "Host Count:",
+    blast_radius["host_count"]
+)
+
+print(
+    "User Count:",
+    blast_radius["user_count"]
+)
+
+print(
+    "Critical Assets:",
+    blast_radius["critical_assets"]
+)
+
+print(
+    "Critical Asset Count:",
+    blast_radius["critical_asset_count"]
+)
+
+print("Attack Path:")
+
+for path in blast_radius["attack_path"]:
+    print(path)
