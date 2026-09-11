@@ -9,6 +9,8 @@ from engine.blast_radius import calculate_blast_radius
 from engine.infrastructure import build_infrastructure_map
 from engine.recommendations import generate_telemetry_recommendations
 from engine.counterfactual import simulate_counterfactual
+from engine.investigator import investigate
+from engine.replay import build_attack_replay
 
 
 events = load_all_events()
@@ -61,6 +63,18 @@ infrastructure = build_infrastructure_map(
 counterfactual = simulate_counterfactual(
     timeline,
     "Lateral Movement"
+)
+
+investigation = investigate(
+    "How did the attacker reach DB-01?",
+    timeline,
+    evidence,
+    gaps,
+    blast_radius
+)
+
+replay = build_attack_replay(
+    timeline
 )
 
 
@@ -235,3 +249,46 @@ print(
     "Impact:",
     counterfactual["impact"]
 )
+
+
+print("\nAI Investigator:")
+
+print(
+    "Question:",
+    "How did the attacker reach DB-01?"
+)
+
+print(
+    "Answer:",
+    investigation["answer"]
+)
+
+print(
+    "Evidence References:",
+    investigation["evidence_refs"]
+)
+
+print(
+    "Confidence:",
+    investigation["confidence"]
+)
+
+
+print("\nAttack Replay:")
+
+for step in replay:
+    print(
+        "Step",
+        step["step"],
+        "|",
+        step["timestamp"],
+        "|",
+        step["stage"],
+        "|",
+        step["event_id"]
+    )
+
+    print(
+        " ",
+        step["description"]
+    )
