@@ -4,6 +4,7 @@ from engine.evidence import analyze_evidence
 from engine.scoring import calculate_confidence
 from engine.scoring import calculate_completeness
 from engine.gaps import find_evidence_gaps
+from engine.graph import build_attack_graph
 
 
 events = load_all_events()
@@ -36,6 +37,8 @@ gaps = find_evidence_gaps(
     events
 )
 
+graph = build_attack_graph(timeline)
+
 
 print("Attack events:", len(timeline))
 print("Confidence:", confidence)
@@ -63,4 +66,18 @@ for gap in gaps:
         gap["gap"],
         "|",
         gap["impact"]
+    )
+
+print("\nAttack Graph:")
+
+print("Nodes:", len(graph["nodes"]))
+print("Edges:", len(graph["edges"]))
+
+for edge in graph["edges"]:
+    print(
+        edge["source"],
+        "->",
+        edge["target"],
+        "|",
+        edge["relationship"]
     )
