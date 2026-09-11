@@ -7,6 +7,7 @@ from engine.gaps import find_evidence_gaps
 from engine.graph import build_attack_graph
 from engine.blast_radius import calculate_blast_radius
 from engine.infrastructure import build_infrastructure_map
+from engine.recommendations import generate_telemetry_recommendations
 
 
 events = load_all_events()
@@ -35,6 +36,12 @@ completeness = calculate_completeness(
 )
 
 gaps = find_evidence_gaps(
+    timeline,
+    events
+)
+
+recommendations = generate_telemetry_recommendations(
+    gaps,
     timeline,
     events
 )
@@ -79,6 +86,18 @@ for gap in gaps:
         gap["gap"],
         "|",
         gap["impact"]
+    )
+
+
+print("\nTelemetry Recommendations:")
+
+for recommendation in recommendations:
+    print(
+        recommendation["priority"],
+        "|",
+        recommendation["recommendation"],
+        "|",
+        recommendation["reason"]
     )
 
 
